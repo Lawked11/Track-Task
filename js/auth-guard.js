@@ -19,7 +19,7 @@ function redirectToLoginIfNotAuth() {
     onAuthStateChanged(auth, user => {
         // If not logged in, redirect to login.html
         if (!user) {
-            window.location.href = "login.html";
+            window.location.href = "index.html";
         }
     });
 }
@@ -27,7 +27,7 @@ function redirectToLoginIfNotAuth() {
 // For logout button global usage
 window.logout = function() {
     signOut(auth).then(() => {
-        window.location.href = "login.html";
+        window.location.href = "index.html";
     });
 };
 
