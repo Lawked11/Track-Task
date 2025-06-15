@@ -76,7 +76,8 @@ function subscribeAndRenderEmployeeTasks() {
 function renderEmployeeTasks(tasks, user) {
     const tbody = document.getElementById('employee-tasks-table-body');
     tbody.innerHTML = "";
-    tasks.filter(t => t.status !== "Done").forEach(task => {
+    // FIX: Only show unfinished tasks assigned to this employee
+    tasks.filter(t => t.status !== "Done" && t.assignToId === user.uid).forEach(task => {
         const row = document.createElement('tr');
         let evidenceCell = "";
         if (task.evidenceUrl) {
@@ -163,7 +164,8 @@ function renderEmployeeTasks(tasks, user) {
 function renderEmployeeCompletedTasks(tasks, user) {
     const tbody = document.getElementById('employee-completed-tasks-table-body');
     tbody.innerHTML = "";
-    tasks.filter(t => t.status === "Done").forEach(task => {
+    // FIX: Only show completed tasks assigned to this employee
+    tasks.filter(t => t.status === "Done" && t.assignToId === user.uid).forEach(task => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${task.title || ""}</td>

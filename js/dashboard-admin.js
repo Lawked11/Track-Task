@@ -26,6 +26,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// Always use this admin UID when fetching/administering tasks
 const adminUid = "1WrUyeslVQamX5nk7DTqrB2padS2";
 
 function formatDateTime(date) {
@@ -123,7 +124,7 @@ if (createTaskForm) {
 
         try {
             // Generate the same ID for both locations
-            const adminTaskRef = doc(collection(db, "users", user.uid, "tasks"));
+            const adminTaskRef = doc(collection(db, "users", adminUid, "tasks"));
             const taskId = adminTaskRef.id;
             const taskData = {
                 title,
@@ -151,22 +152,21 @@ if (createTaskForm) {
     });
 }
 
-// --- Render All Tasks ---
+// --- Render All Tasks (Unfinished) ---
 const allTasksNav = document.querySelector('a[onclick="showSection(\'allTasks\')"]');
 if (allTasksNav) allTasksNav.addEventListener('click', subscribeAndRenderTasks);
 
 let unsubscribeTasksListener = null;
 function subscribeAndRenderTasks() {
-    const user = auth.currentUser;
-    if (!user) return;
+    // Use adminUid so we always get all admin-assigned tasks
     if (unsubscribeTasksListener) unsubscribeTasksListener();
-    unsubscribeTasksListener = onSnapshot(collection(db, "users", user.uid, "tasks"), snapshot => {
-        renderTasksTable(snapshot.docs, user);
+    unsubscribeTasksListener = onSnapshot(collection(db, "users", adminUid, "tasks"), snapshot => {
+        renderTasksTable(snapshot.docs);
     });
 }
 auth.onAuthStateChanged(user => { if (user) subscribeAndRenderTasks(); });
 
-async function renderTasksTable(taskDocs, user) {
+async function renderTasksTable(taskDocs) {
     const tableBody = document.getElementById('tasks-table-body');
     tableBody.innerHTML = "";
     const employeesSnap = await getDocs(collection(db, "Admin", adminUid, "employee"));
@@ -338,21 +338,24 @@ async function renderTasksTable(taskDocs, user) {
     }
 }
 
-// --- Completed Tasks Table ---
+// --- Completed Tasks Table (ADMIN FIXED) ---
 const completedTasksNav = document.querySelector('a[onclick="showSection(\'completedTasks\')"]');
 if (completedTasksNav) completedTasksNav.addEventListener('click', subscribeAndRenderCompletedTasks);
 
 let unsubscribeCompletedTasksListener = null;
 function subscribeAndRenderCompletedTasks() {
-    const user = auth.currentUser;
-    if (!user) return;
+    // Use adminUid so we always get all admin-assigned tasks (including completed)
     if (unsubscribeCompletedTasksListener) unsubscribeCompletedTasksListener();
-    unsubscribeCompletedTasksListener = onSnapshot(collection(db, "users", user.uid, "tasks"), snapshot => {
-        const completed = snapshot.docs.filter(doc => doc.data().status === "Done");
-        renderCompletedTasksTable(completed, user);
-    });
+    unsubscribeCompletedTasksListener = onSnapshot(
+        collection(db, "users", adminUid, "tasks"),
+        snapshot => {
+            const completed = snapshot.docs.filter(doc => doc.data().status === "Done");
+            renderCompletedTasksTable(completed);
+        }
+    );
 }
-async function renderCompletedTasksTable(taskDocs, user) {
+
+async function renderCompletedTasksTable(taskDocs) {
     const tableBody = document.getElementById('completed-tasks-table-body');
     tableBody.innerHTML = "";
     const employeesSnap = await getDocs(collection(db, "Admin", adminUid, "employee"));
