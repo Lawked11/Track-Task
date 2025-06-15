@@ -1,34 +1,35 @@
-// auth-guard.js
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-auth.js";
-
-// Firebase configuration (must match your other config)
-const firebaseConfig = {
-    apiKey: "AIzaSyBz4CJRYO-HjNs-77vyxA-Bdcf4ihSeH5o",
-    authDomain: "task-track---login-4b5f9.firebaseapp.com",
-    projectId: "task-track---login-4b5f9",
-    storageBucket: "task-track---login-4b5f9.appspot.com",
-    messagingSenderId: "898650919931",
-    appId: "1:898650919931:web:8daf17dc06b9fc5d62715e",
-    measurementId: "G-47J31JQ3JH"
-};
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-
-function redirectToLoginIfNotAuth() {
-    onAuthStateChanged(auth, user => {
-        // If not logged in, redirect to login.html
-        if (!user) {
+onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+        // Not logged in, allow both login and signup page
+        if (
+            !path.includes("index.html") &&
+            !path.includes("signup.html")
+        ) {
             window.location.href = "index.html";
         }
-    });
-}
-
-// For logout button global usage
-window.logout = function() {
-    signOut(auth).then(() => {
+        return;
+    }
+    // Get user doc
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
+    if (!userDoc.exists()) {
+        alert("No Firestore user doc found for UID: " + user.uid + ". Please contact admin.");
+        await auth.signOut();
         window.location.href = "index.html";
-    });
-};
-
-redirectToLoginIfNotAuth();
+        return;
+    }
+    const role = userDoc.data().role;
+    if (!role) {
+        alert("User Firestore doc missing 'role' field. Please contact admin.");
+        await auth.signOut();
+        window.location.href = "index.html";
+        return;
+    }
+    // Redirect to correct dashboard if on the wrong one
+    if (path.includes("dashboard-admin") && role !== "admin") {
+        window.location.href = "dashboard-employee.html";
+    } else if (path.includes("dashboard-employee") && role !== "employee") {
+        window.location.href = "dashboard-admin.html";
+    }
+    // If on index.html or signup.html, let them stay (no redirect needed)
+});
